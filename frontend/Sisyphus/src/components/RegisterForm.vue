@@ -5,6 +5,7 @@ import { userService } from '../services/api'
 // 表单数据
 const username = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const name = ref('')
 const email = ref('')
 
@@ -13,6 +14,9 @@ const errorMessage = ref('')
 
 // 成功消息
 const successMessage = ref('')
+
+// 定义事件
+const emit = defineEmits(['register-success'])
 
 // 注册方法
 const handleRegister = async () => {
@@ -23,6 +27,12 @@ const handleRegister = async () => {
     // 表单验证
     if (!username.value || !password.value || !name.value) {
       errorMessage.value = '用户名、密码和姓名不能为空'
+      return
+    }
+    
+    // 密码确认验证
+    if (password.value !== confirmPassword.value) {
+      errorMessage.value = '两次输入的密码不一致'
       return
     }
     
@@ -40,8 +50,14 @@ const handleRegister = async () => {
     // 清空表单
     username.value = ''
     password.value = ''
+    confirmPassword.value = ''
     name.value = ''
     email.value = ''
+    
+    // 3秒后跳转到登录页面
+    setTimeout(() => {
+      emit('register-success')
+    }, 3000)
   } catch (error) {
     // 处理错误
     if (error.response && error.response.data && error.response.data.error) {
@@ -87,6 +103,17 @@ const handleRegister = async () => {
           v-model="password" 
           type="password" 
           placeholder="请输入密码" 
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label for="confirm-password">确认密码</label>
+        <input 
+          id="confirm-password" 
+          v-model="confirmPassword" 
+          type="password" 
+          placeholder="请再次输入密码" 
           required
         />
       </div>

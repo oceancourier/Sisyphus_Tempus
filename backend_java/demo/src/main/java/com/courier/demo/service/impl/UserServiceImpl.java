@@ -48,4 +48,15 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
     }
+    
+    @Override
+    public User update(User user) {
+        // 检查用户是否存在
+        if (!userRepository.existsById(user.getId())) {
+            throw new RuntimeException("用户不存在");
+        }
+        
+        // 保存更新后的用户信息
+        return userRepository.save(user);
+    }
 }

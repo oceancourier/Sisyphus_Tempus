@@ -28,6 +28,11 @@ export const userService = {
   // 获取用户信息
   getUserById: (id) => {
     return apiClient.get(`/users/${id}`)
+  },
+  
+  // 更新用户个人信息
+  updateProfile: (userData) => {
+    return apiClient.put(`/users/${userData.id}`, userData)
   }
 }
 
@@ -49,6 +54,21 @@ export const checkInService = {
   getUserCheckInsBetween: (userId, startTime, endTime) => {
     return apiClient.get(`/check-ins/user/${userId}/between`, {
       params: { startTime, endTime }
+    })
+  },
+  
+  // 获取用户的今日打卡记录
+  getUserTodayCheckIns: (userId) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    return apiClient.get(`/check-ins/user/${userId}/between`, {
+      params: { 
+        startTime: today.toISOString(), 
+        endTime: tomorrow.toISOString() 
+      }
     })
   }
 }

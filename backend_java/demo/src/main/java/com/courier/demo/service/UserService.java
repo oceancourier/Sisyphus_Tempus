@@ -32,4 +32,11 @@ public interface UserService {
      * @throws RuntimeException 如果用户不存在
      */
     User findById(Long id);
+    
+    /**
+     * 更新用户信息
+     * @param user 用户信息
+     * @return 更新后的用户
+     */
+    User update(User user);
 }

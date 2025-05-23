@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { checkInService } from '../services/api'
 
 // 用户信息
@@ -13,12 +13,20 @@ const checkInStatus = ref('')
 // 打卡记录
 const checkInRecords = ref([])
 
+// 今日打卡状态
+const todayCheckIns = ref([])
+const hasCheckedInToday = computed(() => todayCheckIns.value.length > 0)
+
+// 定义事件
+const emit = defineEmits(['go-to-profile'])
+
 // 组件加载时获取用户信息
 onMounted(() => {
   const storedUser = localStorage.getItem('user')
   if (storedUser) {
     user.value = JSON.parse(storedUser)
     fetchCheckInRecords()
+    fetchTodayCheckIns()
   }
 })
 
@@ -31,7 +39,7 @@ const handleCheckIn = async () => {
       return
     }
     
-    // 调用打卡API，不需要捕获响应
+    // 调用打卡API
     await checkInService.checkIn(user.value.id, checkInNote.value)
     
     // 打卡成功
@@ -41,6 +49,7 @@ const handleCheckIn = async () => {
     
     // 刷新打卡记录
     fetchCheckInRecords()
+    fetchTodayCheckIns()
   } catch (error) {
     // 处理错误
     checkInStatus.value = 'error'
@@ -64,11 +73,24 @@ const fetchCheckInRecords = async () => {
   }
 }
 
+// 获取今日打卡记录
+const fetchTodayCheckIns = async () => {
+  try {
+    if (!user.value) return
+    
+    const response = await checkInService.getUserTodayCheckIns(user.value.id)
+    todayCheckIns.value = response.data
+  } catch (error) {
+    console.error('获取今日打卡记录失败', error)
+  }
+}
+
 // 退出登录
 const logout = () => {
   localStorage.removeItem('user')
   user.value = null
   checkInRecords.value = []
+  todayCheckIns.value = []
 }
 
 // 格式化日期时间
@@ -83,17 +105,30 @@ const formatDateTime = (dateTimeStr) => {
     second: '2-digit'
   }).format(date)
 }
+
+// 跳转到个人资料页面
+const goToProfile = () => {
+  emit('go-to-profile')
+}
 </script>
 
 <template>
   <div class="check-in-container">
     <div v-if="user" class="user-info">
-      <h2>欢迎, {{ user.name }}</h2>
+      <div class="user-name-container">
+        <h2>欢迎, {{ user.name }}</h2>
+        <button @click="goToProfile" class="profile-btn">个人信息</button>
+      </div>
       <button @click="logout" class="logout-btn">退出登录</button>
     </div>
     
     <div v-if="user" class="check-in-form">
       <h3>今日打卡</h3>
+      
+      <!-- 打卡状态提示 -->
+      <div v-if="hasCheckedInToday" class="today-status success">
+        今日已打卡 ({{ todayCheckIns.length }}次)
+      </div>
       
       <!-- 打卡消息提示 -->
       <div v-if="checkInMessage" :class="['message', checkInStatus]">
@@ -143,6 +178,26 @@ const formatDateTime = (dateTimeStr) => {
   margin-bottom: 20px;
   padding-bottom: 10px;
   border-bottom: 1px solid #eee;
+}
+
+.user-name-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-name-container h2 {
+  margin: 0;
+}
+
+.profile-btn {
+  padding: 5px 10px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .logout-btn {
@@ -209,6 +264,14 @@ textarea {
   background-color: #ffecec;
 }
 
+.today-status {
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+}
+
 .check-in-records {
   background-color: #f9f9f9;
   padding: 20px;
@@ -249,5 +312,21 @@ ul {
   background-color: #f9f9f9;
   border-radius: 5px;
   color: #666;
+}
+
+@media (max-width: 600px) {
+  .user-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .user-name-container {
+    width: 100%;
+  }
+  
+  .logout-btn {
+    width: 100%;
+  }
 }
 </style>

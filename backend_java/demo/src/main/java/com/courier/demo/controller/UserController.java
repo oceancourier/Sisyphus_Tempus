@@ -19,7 +19,6 @@ public class UserController {
     
     private final UserService userService;
     
-    
     public UserController(UserService userService) {
         this.userService = userService;
     }
@@ -71,6 +70,51 @@ public class UserController {
         try {
             User user = userService.findById(id);
             return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * 更新用户信息
+     * @param id 用户ID
+     * @param userData 用户数据
+     * @return 更新后的用户信息
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> userData) {
+        try {
+            // 获取原用户信息
+            User user = userService.findById(id);
+            
+            // 更新用户信息
+            if (userData.containsKey("name")) {
+                user.setName((String) userData.get("name"));
+            }
+            
+            if (userData.containsKey("email")) {
+                user.setEmail((String) userData.get("email"));
+            }
+            
+            // 如果要更新密码
+            if (userData.containsKey("currentPassword") && userData.containsKey("newPassword")) {
+                String currentPassword = (String) userData.get("currentPassword");
+                String newPassword = (String) userData.get("newPassword");
+                
+                // 验证当前密码
+                if (!user.getPassword().equals(currentPassword)) {
+                    throw new RuntimeException("当前密码不正确");
+                }
+                
+                // 更新密码
+                user.setPassword(newPassword);
+            }
+            
+            // 保存更新
+            User updatedUser = userService.update(user);
+            return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             Map<String, String> response = new HashMap<>();
             response.put("error", e.getMessage());
